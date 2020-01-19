@@ -1,0 +1,36 @@
+language: python
+
+services: 
+  - docker
+
+dist: bionic
+
+python:
+  - "3.7"
+  - "3.8"
+
+before_install:
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  - if [[ $TRAVIS_PYTHON_VERSION == "3.8" ]]; then docker build -t ahugues/porygon-barcode-api .; fi
+  
+install:
+  - pip install -r test-requirements.txt
+
+script:
+  - pytest
+
+after_success:
+  - if [[ $TRAVIS_PYTHON_VERSION == "3.8" ]]; then codecov; fi
+
+deploy:
+  - provider: script
+    script: bash docker_push
+    on:
+      python: 3.8
+      branch: master
+  - provider: script
+    script: bash docker_push
+    on:
+      python: 3.8
+      all_branches: true
+      tag: true
