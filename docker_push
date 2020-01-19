@@ -1,0 +1,34 @@
+#!/bin/bash
+echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+package_version=v$(python setup.py --version)
+echo "Pushing docker images for version $package_version"
+
+# push latest master image
+echo "Pushing master image"
+docker tag ahugues/porygon-barcode-api ahugues/porygon-barcode-api:master
+docker push ahugues/porygon-barcode-api:master
+
+# # only tag latest and versionned image on tagged commit
+if [ -z "$TRAVIS_TAG" ]
+then
+    echo "Not a tagged build, exiting..."
+    exit 0
+fi
+
+
+if [ "$package_version" != "$TRAVIS_TAG" ]
+then
+    >&2 echo "ERROR: tag [$TRAVIS_TAG] and package version [$package_version] don't match, exiting..."
+    exit 1
+fi
+
+# push image associated with current version
+echo "Pushing image for tag $TRAVIS_TAG"
+docker tag ahugues/porygon-barcode-api ahugues/porygon-barcode-api:$TRAVIS_TAG
+docker push ahugues/porygon-barcode-api:$TRAVIS_TAG
+
+# push image associated with latest tag
+echo "Pushing latest image"
+docker tag ahugues/porygon-barcode-api ahugues/porygon-barcode-api:latest
+docker push ahugues/porygon-barcode-api:latest
